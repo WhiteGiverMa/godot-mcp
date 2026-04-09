@@ -35,12 +35,6 @@ func _ready() -> void:
 	print("McpInteractionServer: Listening on %s:%d" % [_listen_host, _listen_port])
 
 
-func _exit_tree() -> void:
-	if _server != null and _server.is_listening():
-		_server.stop()
-	_write_runtime_metadata(false)
-
-
 func _load_server_config() -> Dictionary:
 	var config: Dictionary = {
 		"host": DEFAULT_HOST,
@@ -4639,4 +4633,5 @@ func _exit_tree() -> void:
 	if _server != null:
 		_server.stop()
 		_server = null
+	_write_runtime_metadata(false)
 	print("McpInteractionServer: Stopped")
