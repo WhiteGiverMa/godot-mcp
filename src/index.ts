@@ -514,7 +514,7 @@ class GodotServer {
   /**
    * Send a command to the running game and wait for a response
    */
-  private async sendGameCommand(command: string, params: Record<string, any> = {}, timeoutMs: number = 10000): Promise<any> {
+  private async sendGameCommand(command: string, params: Record<string, any> = {}, timeoutMs: number = 30000): Promise<any> {
     if (!this.gameConnection.connected || !this.gameConnection.socket) {
       throw new Error('Not connected to game interaction server. Is the game running?');
     }
