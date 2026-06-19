@@ -34,7 +34,8 @@ foreach ($sourceFile in $sourceFiles) {
 foreach ($projectPath in $ProjectPaths) {
 	$addonPath = Join-Path $projectPath 'addons\godot_mcp'
 	if (-not (Test-Path $addonPath)) {
-		throw "Missing downstream addon path: $addonPath"
+		Write-Host "  skip $projectPath (addons\godot_mcp not found)" -ForegroundColor Yellow
+		continue
 	}
 
 	Write-Host "==> Syncing $projectPath" -ForegroundColor Cyan

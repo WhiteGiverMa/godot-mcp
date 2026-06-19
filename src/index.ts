@@ -1160,6 +1160,35 @@ class GodotServer {
           },
         },
         {
+          name: 'game_eval_csharp',
+          description: 'Evaluate a C# path expression via the EvalGateway autoload (C# projects only). Resolves autoload names, static Instance properties, and chained field/index access. Example: "CombatManager.PlayerHero.CurrentHealth". Returns Godot Variant (primitives, Array for List<T>, Dictionary for custom classes).',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'Dot-separated path expression. Root can be an autoload name (e.g. "GameManager"), a type with static Instance property (e.g. "CombatManager"), or "static:TypeName" for direct static access. Index access: "Board.PlayerSlots[0]".',
+              },
+            },
+            required: ['path'],
+          },
+        },
+        {
+          name: 'game_eval_csharp_snapshot',
+          description: 'Get a structured runtime snapshot from the EvalGateway autoload (C# projects only). One call replaces many Eval chains for common QA. Kinds: "combat" (phase/mana/heroes/minions), "player", "enemy", "board" (slot-by-slot).',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              kind: {
+                type: 'string',
+                enum: ['combat', 'player', 'enemy', 'board'],
+                description: 'Snapshot kind. "combat" = full battle state, "player" = player hero + mana, "enemy" = enemy units list, "board" = slot-by-slot minions both sides.',
+              },
+            },
+            required: ['kind'],
+          },
+        },
+        {
           name: 'game_get_property',
           description: 'Get a property value from any node in the running game by its path',
           inputSchema: {
@@ -3341,6 +3370,10 @@ class GodotServer {
         // New runtime interaction tools
         case 'game_eval':
           return await this.handleGameEval(request.params.arguments);
+        case 'game_eval_csharp':
+          return await this.handleGameEvalCsharp(request.params.arguments);
+        case 'game_eval_csharp_snapshot':
+          return await this.handleGameEvalCsharpSnapshot(request.params.arguments);
         case 'game_get_property':
           return await this.handleGameGetProperty(request.params.arguments);
         case 'game_set_property':
@@ -4633,6 +4666,31 @@ class GodotServer {
       code: a.code,
       timeout_seconds: clampedTimeoutSeconds,
     }), timeoutMs);
+  }
+
+  // C# eval via EvalGateway autoload — routes through call_method to /root/EvalGateway
+  private async handleGameEvalCsharp(args: any) {
+    args = normalizeParameters(args || {});
+    if (!args.path) return createErrorResponse('path parameter is required.');
+    return this.gameCommand('call_method', args, a => ({
+      node_path: '/root/EvalGateway',
+      method: 'Eval',
+      args: [a.path],
+    }));
+  }
+
+  private async handleGameEvalCsharpSnapshot(args: any) {
+    args = normalizeParameters(args || {});
+    if (!args.kind) return createErrorResponse('kind parameter is required.');
+    const validKinds = ['combat', 'player', 'enemy', 'board'];
+    if (!validKinds.includes(args.kind)) {
+      return createErrorResponse(`kind must be one of: ${validKinds.join(', ')}. Got: ${args.kind}`);
+    }
+    return this.gameCommand('call_method', args, a => ({
+      node_path: '/root/EvalGateway',
+      method: 'GetSnapshot',
+      args: [a.kind],
+    }));
   }
 
   private async handleGameGetProperty(args: any) {
