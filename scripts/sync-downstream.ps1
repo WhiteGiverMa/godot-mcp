@@ -1,7 +1,8 @@
 param(
 	[string[]]$ProjectPaths = @(
 		"G:\dev\DreamerHeroines",
-		"G:\dev\operation-taklamakan"
+		"G:\dev\operation-taklamakan",
+		"G:\dev\odyssey-cards"
 	),
 	[switch]$SkipBuild
 )
