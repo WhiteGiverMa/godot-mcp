@@ -62,6 +62,8 @@ const ALL_TOOL_NAMES = [
   'game_render_settings', 'game_resource',
   // Batch 6: Visual Shader + Terrain + Video + CI/CD
   'game_visual_shader', 'game_terrain', 'game_video', 'manage_ci_pipeline', 'manage_docker_export',
+  // C# eval via EvalGateway autoload
+  'game_eval_csharp', 'game_eval_csharp_snapshot',
 ];
 
 let sourceCode: string;
@@ -71,8 +73,8 @@ beforeAll(() => {
 });
 
 describe('Tool definitions', () => {
-  it('defines exactly 154 tools', () => {
-    expect(ALL_TOOL_NAMES).toHaveLength(154);
+it('defines exactly 156 tools', () => {
+  expect(ALL_TOOL_NAMES).toHaveLength(156);
   });
 
   it('all tool names are unique', () => {

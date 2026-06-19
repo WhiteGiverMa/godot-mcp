@@ -1,7 +1,7 @@
 {
-  "name": "@tugcantopaloglu/godot-mcp",
+  "name": "@whitemagiverma/godot-mcp",
   "version": "1.0.0",
-  "description": "MCP server for full Godot 4.x engine control — 165 tools for AI-driven game development",
+  "description": "MCP server for full Godot 4.x engine control — 156 tools for AI-driven game development, with C# eval support",
   "keywords": [
     "godot",
     "mcp",
@@ -10,21 +10,23 @@
     "cline",
     "game-engine",
     "gdscript",
+    "csharp",
     "runtime",
     "model-context-protocol"
   ],
-  "homepage": "https://github.com/tugcantopaloglu/godot-mcp",
+  "homepage": "https://github.com/WhiteGiverMa/godot-mcp",
   "bugs": {
-    "url": "https://github.com/tugcantopaloglu/godot-mcp/issues"
+    "url": "https://github.com/WhiteGiverMa/godot-mcp/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tugcantopaloglu/godot-mcp.git"
+    "url": "https://github.com/WhiteGiverMa/godot-mcp.git"
   },
-  "mcpName": "io.github.tugcantopaloglu/godot-mcp",
+  "mcpName": "io.github.whitemagiverma/godot-mcp",
   "license": "MIT",
-  "author": "Tugcan Topaloglu",
+  "author": "马戈 (WhiteGiverMa)",
   "contributors": [
+    "Tugcan Topaloglu (https://github.com/tugcantopaloglu)",
     "Solomon Elias <solomon@sippy.ai> (https://github.com/Coding-Solo)"
   ],
   "type": "module",

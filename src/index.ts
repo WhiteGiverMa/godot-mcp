@@ -1161,13 +1161,13 @@ class GodotServer {
         },
         {
           name: 'game_eval_csharp',
-          description: 'Evaluate a C# path expression via the EvalGateway autoload (C# projects only). Resolves autoload names, static Instance properties, and chained field/index access. Example: "CombatManager.PlayerHero.CurrentHealth". Returns Godot Variant (primitives, Array for List<T>, Dictionary for custom classes).',
+          description: 'Evaluate a C# path expression via EvalGateway autoload (C# projects only).',
           inputSchema: {
             type: 'object',
             properties: {
               path: {
                 type: 'string',
-                description: 'Dot-separated path expression. Root can be an autoload name (e.g. "GameManager"), a type with static Instance property (e.g. "CombatManager"), or "static:TypeName" for direct static access. Index access: "Board.PlayerSlots[0]".',
+                description: 'C# path expression, e.g. "CombatManager.PlayerHero.CurrentHealth".',
               },
             },
             required: ['path'],
@@ -1175,14 +1175,14 @@ class GodotServer {
         },
         {
           name: 'game_eval_csharp_snapshot',
-          description: 'Get a structured runtime snapshot from the EvalGateway autoload (C# projects only). One call replaces many Eval chains for common QA. Kinds: "combat" (phase/mana/heroes/minions), "player", "enemy", "board" (slot-by-slot).',
+          description: 'Get a structured runtime snapshot via EvalGateway autoload (C# projects only).',
           inputSchema: {
             type: 'object',
             properties: {
               kind: {
                 type: 'string',
                 enum: ['combat', 'player', 'enemy', 'board'],
-                description: 'Snapshot kind. "combat" = full battle state, "player" = player hero + mana, "enemy" = enemy units list, "board" = slot-by-slot minions both sides.',
+                description: 'Snapshot kind: combat, player, enemy, or board.',
               },
             },
             required: ['kind'],
