@@ -22,6 +22,16 @@ var _listen_host: String = DEFAULT_HOST
 var _listen_port: int = DEFAULT_PORT
 var _poll_timer: Timer
 
+
+## 安全地从 transport Dictionary 提取 bool 值。
+## 防御 MCP transport 可能传入的字符串 "true"/"false" 等非 bool 类型。
+## 所有 _cmd_* 函数中从 params 解包 bool 字段必须通过此函数。
+static func _safe_bool(val: Variant, default_val: bool = false) -> bool:
+	if val is String:
+		return val.to_lower() == "true"
+	return bool(val)
+
+
 func _ready() -> void:
 	# 导出包（尤其 Android）不需要 MCP 运行时交互服务器。
 	# 在非编辑器环境直接禁用，避免移动端启动时疯狂刷端口监听错误。
@@ -510,7 +520,7 @@ func _cmd_click(params: Dictionary) -> void:
 func _cmd_key_press(params: Dictionary) -> void:
 	var action: String = params.get("action", "")
 	var key: String = params.get("key", "")
-	var pressed: bool = params.get("pressed", true)
+	var pressed: bool = _safe_bool(params.get("pressed"), true)
 
 	if action.length() > 0:
 		# Simulate an action press/release
@@ -916,7 +926,7 @@ func _cmd_change_scene(params: Dictionary) -> void:
 
 # --- Pause ---
 func _cmd_pause(params: Dictionary) -> void:
-	var paused: bool = params.get("paused", true)
+	var paused: bool = _safe_bool(params.get("paused"), true)
 	get_tree().paused = paused
 	_send_response({"success": true, "paused": paused})
 
@@ -1384,7 +1394,7 @@ func _cmd_reparent_node(params: Dictionary) -> void:
 		_send_response({"error": "New parent not found: %s" % new_parent_path})
 		return
 
-	var keep_global: bool = params.get("keep_global_transform", true)
+	var keep_global: bool = _safe_bool(params.get("keep_global_transform"), true)
 	node.reparent(new_parent, keep_global)
 	_send_response({"success": true, "node": node.name, "new_parent": new_parent_path, "new_path": str(node.get_path())})
 
@@ -1965,7 +1975,7 @@ func _cmd_audio_bus(params: Dictionary) -> void:
 func _cmd_navigate_path(params: Dictionary) -> void:
 	var start_dict: Dictionary = params.get("start", {})
 	var end_dict: Dictionary = params.get("end", {})
-	var optimize: bool = params.get("optimize", true)
+	var optimize: bool = _safe_bool(params.get("optimize"), true)
 
 	if start_dict.is_empty() or end_dict.is_empty():
 		_send_response({"error": "start and end are required"})
@@ -2307,8 +2317,8 @@ func _cmd_manage_group(params: Dictionary) -> void:
 func _cmd_create_timer(params: Dictionary) -> void:
 	var parent_path: String = params.get("parent_path", "/root")
 	var wait_time: float = float(params.get("wait_time", 1.0))
-	var one_shot: bool = params.get("one_shot", false)
-	var autostart: bool = params.get("autostart", false)
+	var one_shot: bool = _safe_bool(params.get("one_shot"), false)
+	var autostart: bool = _safe_bool(params.get("autostart"), false)
 
 	var parent: Node = get_tree().root.get_node_or_null(parent_path)
 	if parent == null:
@@ -4576,7 +4586,7 @@ func _cmd_ui_menu(params: Dictionary) -> void:
 			menu.remove_item(int(params.get("index", 0)))
 			_send_response({"success": true, "action": "remove"})
 		"set_checked":
-			menu.set_item_checked(int(params.get("index", 0)), bool(params.get("checked", true)))
+			menu.set_item_checked(int(params.get("index", 0)), _safe_bool(params.get("checked"), true))
 			_send_response({"success": true, "action": "set_checked"})
 		"clear":
 			menu.clear()
