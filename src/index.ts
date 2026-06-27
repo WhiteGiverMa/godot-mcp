@@ -40,6 +40,14 @@ const GODOT_DEBUG_MODE: boolean = true; // Always use GODOT DEBUG MODE
 
 const execFileAsync = promisify(execFile);
 
+/** Coerce any value to boolean, defending against MCP transport stringification.
+ *  "false" → false, "true" → true, null/undefined → defaultVal, else Boolean(val). */
+function coerceBool(val: any, defaultVal: boolean): boolean {
+  if (val === undefined || val === null) return defaultVal;
+  if (typeof val === 'string') return val.toLowerCase() === 'true';
+  return Boolean(val);
+}
+
 // Derive __filename and __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -4635,7 +4643,7 @@ class GodotServer {
     const params: Record<string, any> = {};
     if (args.key) params.key = args.key;
     if (args.action) params.action = args.action;
-    if (args.pressed !== undefined) params.pressed = args.pressed;
+    if (args.pressed !== undefined) params.pressed = coerceBool(args.pressed, true);
     return this.gameCommand('key_press', args, () => params);
   }
 
@@ -4742,7 +4750,7 @@ class GodotServer {
   }
 
   private async handleGamePause(args: any) {
-    return this.gameCommand('pause', args, a => ({ paused: a.paused !== undefined ? a.paused : true }));
+    return this.gameCommand('pause', args, a => ({ paused: coerceBool(a.paused, true) }));
   }
 
   private async handleGamePerformance() {
@@ -5069,7 +5077,7 @@ class GodotServer {
     args = normalizeParameters(args || {});
     if (!args.nodePath || !args.newParentPath) return createErrorResponse('nodePath and newParentPath are required.');
     return this.gameCommand('reparent_node', args, a => ({
-      node_path: a.nodePath, new_parent_path: a.newParentPath, keep_global_transform: a.keepGlobalTransform !== false,
+      node_path: a.nodePath, new_parent_path: a.newParentPath,       keep_global_transform: coerceBool(a.keepGlobalTransform, true),
     }));
   }
 
@@ -5492,8 +5500,8 @@ class GodotServer {
     return this.gameCommand('audio_bus', args, a => ({
       bus_name: a.busName || 'Master',
       ...(a.volume !== undefined ? { volume: a.volume } : {}),
-      ...(a.mute !== undefined ? { mute: a.mute } : {}),
-      ...(a.solo !== undefined ? { solo: a.solo } : {}),
+      ...(a.mute !== undefined ? { mute: coerceBool(a.mute, false) } : {}),
+      ...(a.solo !== undefined ? { solo: coerceBool(a.solo, false) } : {}),
     }));
   }
 
@@ -5502,7 +5510,7 @@ class GodotServer {
     if (!args.start || !args.end)
       return createErrorResponse('start and end are required.');
     return this.gameCommand('navigate_path', args, a => ({
-      start: a.start, end: a.end, optimize: a.optimize ?? true,
+      start: a.start, end: a.end, optimize: coerceBool(a.optimize, true),
     }));
   }
 
@@ -5530,7 +5538,7 @@ class GodotServer {
       ...(a.shapeParams ? { shape_params: a.shapeParams } : {}),
       ...(a.collisionLayer !== undefined ? { collision_layer: a.collisionLayer } : {}),
       ...(a.collisionMask !== undefined ? { collision_mask: a.collisionMask } : {}),
-      ...(a.disabled !== undefined ? { disabled: a.disabled } : {}),
+      ...(a.disabled !== undefined ? { disabled: coerceBool(a.disabled, false) } : {}),
     }));
   }
 
@@ -5554,9 +5562,10 @@ class GodotServer {
       ssaoIntensity: 'ssao_intensity', ssrEnabled: 'ssr_enabled',
       brightness: 'brightness', contrast: 'contrast', saturation: 'saturation',
     };
+    const boolKeys = new Set(['fogEnabled', 'glowEnabled', 'ssaoEnabled', 'ssrEnabled']);
     for (const key of envKeys) {
       if (args[key] !== undefined) {
-        params[snakeMap[key]] = args[key];
+        params[snakeMap[key]] = boolKeys.has(key) ? coerceBool(args[key], false) : args[key];
       }
     }
     return this.gameCommand('environment', { ...args }, () => params);
@@ -5577,8 +5586,8 @@ class GodotServer {
     return this.gameCommand('create_timer', args, a => ({
       parent_path: a.parentPath || '/root',
       wait_time: a.waitTime ?? 1.0,
-      one_shot: a.oneShot ?? false,
-      autostart: a.autostart ?? false,
+      one_shot: coerceBool(a.oneShot, false),
+      autostart: coerceBool(a.autostart, false),
       ...(a.name ? { name: a.name } : {}),
     }));
   }
@@ -5589,10 +5598,10 @@ class GodotServer {
       return createErrorResponse('nodePath is required.');
     return this.gameCommand('set_particles', args, a => ({
       node_path: a.nodePath,
-      ...(a.emitting !== undefined ? { emitting: a.emitting } : {}),
+      ...(a.emitting !== undefined ? { emitting: coerceBool(a.emitting, false) } : {}),
       ...(a.amount !== undefined ? { amount: a.amount } : {}),
       ...(a.lifetime !== undefined ? { lifetime: a.lifetime } : {}),
-      ...(a.oneShot !== undefined ? { one_shot: a.oneShot } : {}),
+      ...(a.oneShot !== undefined ? { one_shot: coerceBool(a.oneShot, false) } : {}),
       ...(a.speedScale !== undefined ? { speed_scale: a.speedScale } : {}),
       ...(a.explosiveness !== undefined ? { explosiveness: a.explosiveness } : {}),
       ...(a.randomness !== undefined ? { randomness: a.randomness } : {}),
@@ -5663,8 +5672,8 @@ class GodotServer {
       ...(a.angularDamp !== undefined ? { angular_damp: a.angularDamp } : {}),
       ...(a.friction !== undefined ? { friction: a.friction } : {}),
       ...(a.bounce !== undefined ? { bounce: a.bounce } : {}),
-      ...(a.freeze !== undefined ? { freeze: a.freeze } : {}),
-      ...(a.sleeping !== undefined ? { sleeping: a.sleeping } : {}),
+      ...(a.freeze !== undefined ? { freeze: coerceBool(a.freeze, false) } : {}),
+      ...(a.sleeping !== undefined ? { sleeping: coerceBool(a.sleeping, false) } : {}),
     }));
   }
 
@@ -5720,7 +5729,7 @@ class GodotServer {
       ...(a.width !== undefined ? { width: a.width } : {}),
       ...(a.height !== undefined ? { height: a.height } : {}),
       ...(a.msaa !== undefined ? { msaa: a.msaa } : {}),
-      ...(a.transparentBg !== undefined ? { transparent_bg: a.transparentBg } : {}),
+      ...(a.transparentBg !== undefined ? { transparent_bg: coerceBool(a.transparentBg, false) } : {}),
       ...(a.name ? { name: a.name } : {}),
     }));
   }
@@ -5850,11 +5859,11 @@ class GodotServer {
       action: a.action || 'get',
       ...(a.width !== undefined ? { width: a.width } : {}),
       ...(a.height !== undefined ? { height: a.height } : {}),
-      ...(a.fullscreen !== undefined ? { fullscreen: a.fullscreen } : {}),
-      ...(a.borderless !== undefined ? { borderless: a.borderless } : {}),
+      ...(a.fullscreen !== undefined ? { fullscreen: coerceBool(a.fullscreen, false) } : {}),
+      ...(a.borderless !== undefined ? { borderless: coerceBool(a.borderless, false) } : {}),
       ...(a.title ? { title: a.title } : {}),
       ...(a.position ? { position: a.position } : {}),
-      ...(a.vsync !== undefined ? { vsync: a.vsync } : {}),
+      ...(a.vsync !== undefined ? { vsync: coerceBool(a.vsync, false) } : {}),
     }));
   }
 
@@ -5944,7 +5953,7 @@ class GodotServer {
       ...(a.color ? { color: a.color } : {}),
       ...(a.energy !== undefined ? { energy: a.energy } : {}),
       ...(a.range !== undefined ? { range: a.range } : {}),
-      ...(a.shadows !== undefined ? { shadows: a.shadows } : {}),
+      ...(a.shadows !== undefined ? { shadows: coerceBool(a.shadows, false) } : {}),
       ...(a.spotAngle !== undefined ? { spot_angle: a.spotAngle } : {}),
       ...(a.name ? { name: a.name } : {}),
     }));
@@ -6031,7 +6040,7 @@ class GodotServer {
       ...(a.dofBlurNear !== undefined ? { dof_blur_near: a.dofBlurNear } : {}),
       ...(a.dofBlurAmount !== undefined ? { dof_blur_amount: a.dofBlurAmount } : {}),
       ...(a.exposureMultiplier !== undefined ? { exposure_multiplier: a.exposureMultiplier } : {}),
-      ...(a.autoExposure !== undefined ? { auto_exposure: a.autoExposure } : {}),
+      ...(a.autoExposure !== undefined ? { auto_exposure: coerceBool(a.autoExposure, false) } : {}),
       ...(a.autoExposureScale !== undefined ? { auto_exposure_scale: a.autoExposureScale } : {}),
     }));
   }
@@ -6581,7 +6590,7 @@ class GodotServer {
       node_path: a.nodePath, action: a.action,
       ...(a.index !== undefined ? { index: a.index } : {}),
       ...(a.text ? { text: a.text } : {}),
-      ...(a.checked !== undefined ? { checked: a.checked } : {}),
+      ...(a.checked !== undefined ? { checked: coerceBool(a.checked, true) } : {}),
       ...(a.id !== undefined ? { id: a.id } : {}),
     }));
   }
@@ -6605,8 +6614,8 @@ class GodotServer {
       action: a.action || 'get',
       ...(a.msaa2d !== undefined ? { msaa_2d: a.msaa2d } : {}),
       ...(a.msaa3d !== undefined ? { msaa_3d: a.msaa3d } : {}),
-      ...(a.fxaa !== undefined ? { fxaa: a.fxaa } : {}),
-      ...(a.taa !== undefined ? { taa: a.taa } : {}),
+      ...(a.fxaa !== undefined ? { fxaa: coerceBool(a.fxaa, false) } : {}),
+      ...(a.taa !== undefined ? { taa: coerceBool(a.taa, false) } : {}),
       ...(a.scalingMode !== undefined ? { scaling_mode: a.scalingMode } : {}),
       ...(a.scalingScale !== undefined ? { scaling_scale: a.scalingScale } : {}),
     }));
